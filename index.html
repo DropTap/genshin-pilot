@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genshin Pilot Dashboard</title>
+    <style>
+        :root {
+            /* Genshin Inspired Colors - Light Mode (Default) */
+            --primary: #4a5d85; /* UI Blue */
+            --accent: #d4af37; /* Gold/Stars */
+            --danger: #ff4d4f; /* Pyro Red */
+            --success: #52c41a; /* Dendro Green */
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --sub-text: #666;
+            --detail-text: #888;
+            --tip-bg: #e6f7ff;
+            --tip-border: #1890ff;
+            --tip-text: #0050b3;
+            --safety-bg: #fff2f0;
+            --safety-title: #ff4d4f;
+            --phase-bg: #f8f9fa;
+            --border-color: #eee;
+            --task-hover: #fcfcfc;
+        }
+
+        /* Dark Mode Variables */
+        body.dark-mode {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #e0e0e0;
+            --sub-text: #a0a0a0;
+            --detail-text: #777;
+            --tip-bg: #0d2538;
+            --tip-border: #177ddc;
+            --tip-text: #40a9ff;
+            --safety-bg: #2a1215; /* Dark Red tint */
+            --safety-title: #ff7875;
+            --phase-bg: #252525;
+            --border-color: #333;
+            --task-hover: #2a2a2a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        /* HEADER & TIMER */
+        .header {
+            background: linear-gradient(135deg, var(--primary), #2c3e50);
+            color: white;
+            padding: 25px 20px 15px 20px;
+            text-align: center;
+            position: relative;
+            transition: background 0.5s ease;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            transition: background 0.3s;
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        h1 { margin: 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; }
+        
+        .timer-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+            height: 80px; /* Fixed height to prevent jump */
+        }
+
+        .timer-display {
+            font-size: 3.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .timer-display:hover {
+            opacity: 0.8;
+            border-bottom-color: rgba(255,255,255,0.5);
+        }
+
+        .timer-input {
+            font-size: 3.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            width: 160px;
+            text-align: center;
+            background: #ffffff;
+            color: var(--primary);
+            border: none;
+            border-radius: 12px;
+            display: none;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            animation: pulse-border 1.5s infinite;
+        }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        
+        .edit-hint {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            display: block;
+            margin-top: -5px;
+            margin-bottom: 10px;
+        }
+
+        .controls button {
+            background: var(--accent);
+            border: none;
+            padding: 10px 24px;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .controls button:active { transform: scale(0.95); }
+        .controls button:hover { opacity: 0.9; }
+        
+        .controls button.reset-btn {
+            background: rgba(255,255,255,0.2);
+            font-size: 0.8rem;
+            padding: 8px 16px;
+            margin-left: 10px;
+        }
+
+        /* PRO TIP TICKER */
+        .tip-box {
+            background-color: var(--tip-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            color: var(--tip-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 40px;
+            cursor: pointer;
+            transition: opacity 0.3s, background-color 0.3s;
+        }
+        
+        .tip-icon { margin-right: 8px; font-size: 1.1rem; }
+        .tip-text { font-weight: 500; }
+
+        /* SAFETY ALERT */
+        .safety-box {
+            background: var(--safety-bg);
+            border-left: 5px solid var(--danger);
+            padding: 15px;
+            margin: 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .safety-title { color: var(--safety-title); font-weight: 800; display: block; margin-bottom: 5px; font-size: 0.9rem; text-transform: uppercase; }
+        .safety-list { margin: 0; padding-left: 20px; font-size: 0.9rem; color: var(--sub-text); }
+        .safety-list li { margin-bottom: 4px; }
+
+        /* TASK LIST */
+        .phase-title {
+            background: var(--phase-bg);
+            padding: 10px 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--detail-text);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+            margin-top: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .task-list { list-style: none; padding: 0; margin: 0; }
+        
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .task-item:hover { background-color: var(--task-hover); }
+        .task-item:last-child { border-bottom: none; }
+        
+        /* Custom Checkbox */
+        .checkbox-wrapper {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            margin-right: 15px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        
+        .task-checkbox {
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            position: absolute;
+            z-index: 2;
+        }
+
+        .custom-check {
+            width: 100%;
+            height: 100%;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: all 0.2s;
+        }
+
+        body.dark-mode .custom-check { border-color: #555; }
+
+        .task-checkbox:checked + .custom-check {
+            background-color: var(--success);
+            border-color: var(--success);
+        }
+
+        .task-checkbox:checked + .custom-check::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+        }
+
+        /* Task Content */
+        .task-content { flex: 1; }
+        
+        .time-badge {
+            display: inline-block;
+            background: var(--tip-bg);
+            color: var(--tip-text);
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .task-text { display: block; font-weight: 600; font-size: 1rem; color: var(--text); }
+        .task-sub { display: block; font-size: 0.85rem; color: var(--sub-text); margin-top: 4px; line-height: 1.4; }
+        .task-detail { display: block; font-size: 0.8rem; color: var(--detail-text); font-style: italic; margin-top: 2px; }
+
+        /* Completed State */
+        .task-item.completed .task-text, 
+        .task-item.completed .task-sub,
+        .task-item.completed .task-detail {
+            text-decoration: line-through;
+            color: var(--detail-text);
+            opacity: 0.7;
+        }
+        .task-item.completed .time-badge { opacity: 0.5; }
+
+        /* FOOTER */
+        .footer {
+            padding: 20px;
+            text-align: center;
+            background: var(--bg);
+            font-size: 0.8rem;
+            color: var(--sub-text);
+            transition: background-color 0.3s;
+        }
+
+        /* ANIMATIONS */
+        @keyframes panic {
+            0% { background-color: var(--primary); }
+            50% { background-color: var(--danger); }
+            100% { background-color: var(--primary); }
+        }
+        
+        .header.panic-mode {
+            animation: panic 2s infinite;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <!-- TIMER HEADER -->
+    <div class="header" id="header-bg">
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle Dark Mode">🌙</button>
+        <h1>Pilot Dashboard</h1>
+        
+        <div class="timer-container">
+            <div class="timer-display" id="timer" onclick="editTimer()" title="Click to edit time">30:00</div>
+            <input type="number" id="timerInput" class="timer-input" value="30" min="1" max="120" onblur="saveTimer()" onkeydown="if(event.key === 'Enter') saveTimer()">
+        </div>
+        <span class="edit-hint" id="editHint">Tap timer to edit minutes</span>
+
+        <div class="controls">
+            <button onclick="startTimer()" id="startBtn">Start Shift</button>
+            <button onclick="resetAll()" class="reset-btn" id="resetBtn" style="display:none;">Reset</button>
+        </div>
+    </div>
+
+    <!-- PRO TIP TICKER -->
+    <div class="tip-box" onclick="manualUpdateTip()">
+        <span class="tip-icon">💡</span>
+        <span class="tip-text" id="tipText">Loading tip...</span>
+    </div>
+
+    <!-- SAFETY WARNINGS -->
+    <div class="safety-box">
+        <span class="safety-title">⚠️ STRICT SAFETY PROTOCOLS</span>
+        <ul class="safety-list">
+            <li><strong>Artifacts:</strong> NEVER open the Flower Icon tab.</li>
+            <li><strong>Notifications:</strong> IGNORE red dots (!) on characters.</li>
+            <li><strong>Crafting:</strong> NO "Mystic Offering" (3rd Tab).</li>
+        </ul>
+    </div>
+
+    <!-- TASKS -->
+    <div class="phase-title">Phase 1: Login & Check (0-2 Min)</div>
+    <ul class="task-list">
+        <li class="task-item">
+            <div class="checkbox-wrapper">
+                <input type="checkbox" class="task-checkbox" onclick="toggleRow(this)">
+                <div class="custom-check"></div>
+            </div>
+            <div class="task-content">
+                <span class="time-badge">00:00 - 02:00</span>
+                <span class="task-text">Check Resin & Handbook</span>
+                <span class="task-sub">Press 'M'. Check top-right moon icon.</span>
+                <span class="task-detail">If 160/200+, you MUST spend it. If &lt;20, skip to Quest.</span>
+            </div>
+        </li>
+    </ul>
+
+    <div class="phase-title">Phase 2: The Grind (2-12 Min)</div>
+    <ul class="task-list">
+        <li class="task-item">
+            <div class="checkbox-wrapper">
+                <input type="checkbox" class="task-checkbox" onclick="toggleRow(this)">
+                <div class="custom-check"></div>
+            </div>
+            <div class="task-content">
+                <span class="time-badge">02:00 - 10:00</span>
+                <span class="task-text">Clear Ley Lines / Bosses</span>
+                <span class="task-sub">Teleport to Yellow/Blue clouds. Fight & Claim.</span>
+                <span class="task-detail">Use "Original Resin" (20). DO NOT use Condensed (40) unless asked.</span>
+            </div>
+        </li>
+    </ul>
+
+    <div class="phase-title">Phase 3: The Paycheck (CRITICAL)</div>
+    <ul class="task-list">
+        <li class="task-item">
+            <div class="checkbox-wrapper">
+                <input type="checkbox" class="task-checkbox" onclick="toggleRow(this)">
+                <div class="custom-check"></div>
+            </div>
+            <div class="task-content">
+                <span class="time-badge">10:00 - 12:00</span>
+                <span class="task-text">Claim Dailies @ Katheryne</span>
+                <span class="task-sub">Go to Mondstadt. Talk to Katheryne.</span>
+                <span class="task-detail">Select "Claim Daily Commission Rewards" (Get 60 Primogems).</span>
+            </div>
+        </li>
+        <li class="task-item">
+            <div class="checkbox-wrapper">
+                <input type="checkbox" class="task-checkbox" onclick="toggleRow(this)">
+                <div class="custom-check"></div>
+            </div>
+            <div class="task-content">
+                <span class="time-badge">Immediate</span>
+                <span class="task-text">Reset Expeditions</span>
+                <span class="task-sub">Menu > "Dispatch Character on Expedition"</span>
+                <span class="task-detail">Click "Claim All" -> "Dispatch Again".</span>
+            </div>
+        </li>
+    </ul>
+
+    <div class="phase-title">Phase 4: Events (Remaining Time)</div>
+    <ul class="task-list">
+        <li class="task-item">
+            <div class="checkbox-wrapper">
+                <input type="checkbox" class="task-checkbox" onclick="toggleRow(this)">
+                <div class="custom-check"></div>
+            </div>
+            <div class="task-content">
+                <span class="time-badge">12:00 - 28:00</span>
+                <span class="task-text">Event or World Quest</span>
+                <span class="task-sub">Press 'J'. Do Red (Event) or Gold (Archon) quests.</span>
+                <span class="task-detail">Stop exactly when the timer hits 28:00. No exceptions.</span>
+            </div>
+        </li>
+        <li class="task-item">
+            <div class="checkbox-wrapper">
+                <input type="checkbox" class="task-checkbox" onclick="toggleRow(this)">
+                <div class="custom-check"></div>
+            </div>
+            <div class="task-content">
+                <span class="time-badge">28:00 - 30:00</span>
+                <span class="task-text">Safety Check & Logout</span>
+                <span class="task-sub">Did you talk to Katheryne? If yes, ESC -> Logout.</span>
+                <span class="task-detail">Never leave the account logged in.</span>
+            </div>
+        </li>
+    </ul>
+
+    <div class="footer">
+        Genshin Pilot Tool v2.3 • Built for Laptop/Mobile
+    </div>
+</div>
+
+<script>
+    // --- THEME LOGIC ---
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.getElementById('themeBtn');
+        body.classList.toggle('dark-mode');
+        
+        if (body.classList.contains('dark-mode')) {
+            btn.textContent = '☀️';
+            localStorage.setItem('theme', 'dark');
+        } else {
+            btn.textContent = '🌙';
+            localStorage.setItem('theme', 'light');
+        }
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('themeBtn').textContent = '☀️';
+    }
+
+    // --- EXISTING TIMER LOGIC ---
+    let defaultMinutes = 30;
+    let timeLeft = defaultMinutes * 60;
+    let timerId = null;
+    let isRunning = false;
+    
+    const displayTime = document.getElementById('timer');
+    const inputTime = document.getElementById('timerInput');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const header = document.getElementById('header-bg');
+    const editHint = document.getElementById('editHint');
+
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function editTimer() {
+        if (isRunning) return; 
+        displayTime.style.display = 'none';
+        inputTime.style.display = 'block';
+        inputTime.focus();
+        inputTime.select(); // Select all text for easy replacement
+    }
+
+    function saveTimer() {
+        let val = parseInt(inputTime.value);
+        if (val && val > 0 && val <= 120) {
+            defaultMinutes = val;
+            timeLeft = defaultMinutes * 60;
+        } else {
+            inputTime.value = defaultMinutes; 
+        }
+        inputTime.style.display = 'none';
+        displayTime.style.display = 'block';
+        displayTime.textContent = formatTime(timeLeft);
+    }
+
+    function startTimer() {
+        if (timerId) return;
+        isRunning = true;
+        editHint.style.display = 'none';
+        startBtn.style.display = 'none';
+        resetBtn.style.display = 'inline-block';
+        
+        timerId = setInterval(() => {
+            timeLeft--;
+            displayTime.textContent = formatTime(timeLeft);
+
+            if (timeLeft <= 300 && timeLeft > 0) {
+                header.classList.add('panic-mode');
+                displayTime.textContent = formatTime(timeLeft) + " ⚠️";
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timerId);
+                displayTime.textContent = "SHIFT OVER";
+                header.classList.remove('panic-mode');
+                header.style.background = "#ff4d4f"; 
+                alert("TIME IS UP! LOG OUT NOW.");
+            }
+        }, 1000);
+
+        startTips();
+    }
+
+    function resetAll() {
+        clearInterval(timerId);
+        timerId = null;
+        isRunning = false;
+        timeLeft = defaultMinutes * 60;
+        displayTime.textContent = formatTime(timeLeft);
+        startBtn.style.display = 'inline-block';
+        resetBtn.style.display = 'none';
+        editHint.style.display = 'block';
+        header.classList.remove('panic-mode');
+        header.style.background = "linear-gradient(135deg, var(--primary), #2c3e50)";
+
+        const checkboxes = document.querySelectorAll('.task-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+            cb.closest('.task-item').classList.remove('completed');
+        });
+        stopTips();
+    }
+
+    function toggleRow(checkbox) {
+        const row = checkbox.closest('.task-item');
+        if (checkbox.checked) {
+            row.classList.add('completed');
+        } else {
+            row.classList.remove('completed');
+        }
+    }
+
+    // --- PRO TIPS LOGIC ---
+    const tips = [
+        "Tip: Don't touch the Artifacts tab (Flower Icon) ever!",
+        "Tip: Ignore red dots (!) on character portraits.",
+        "Tip: Use Original Resin (20), NOT Condensed (40) unless asked.",
+        "Tip: Ley Lines (Gold/Blue clouds) are the safest way to spend resin.",
+        "Tip: Always prioritize Daily Commissions (Katheryne) over Story.",
+        "Tip: If you run out of time, log out immediately. Don't push it.",
+        "Tip: Use 'F' to pick up items quickly, but don't equip them.",
+        "Tip: Press 'M' to check Resin. 160/200 means you MUST spend it.",
+        "Tip: Don't enter the Spiral Abyss. It's too risky.",
+        "Tip: If you die, teleport to a Statue of Seven to heal for free.",
+        "Tip: Do NOT click 'Mystic Offering' at the Alchemy Table.",
+        "Tip: Events usually have 'Quick Start' buttons to save time.",
+        "Tip: Switch characters often (1-4) to create Elemental Reactions!"
+    ];
+
+    let tipInterval = null;
+
+    function updateTip() {
+        const tipElement = document.getElementById('tipText');
+        const randomIndex = Math.floor(Math.random() * tips.length);
+        tipElement.style.opacity = 0;
+        setTimeout(() => {
+            tipElement.textContent = tips[randomIndex];
+            tipElement.style.opacity = 1;
+        }, 300);
+    }
+
+    function startTips() {
+        updateTip();
+        if (tipInterval) clearInterval(tipInterval);
+        tipInterval = setInterval(updateTip, 60000); 
+    }
+
+    function stopTips() {
+        if (tipInterval) clearInterval(tipInterval);
+        tipInterval = null;
+    }
+    
+    function manualUpdateTip() {
+        updateTip(); 
+    }
+
+    updateTip();
+</script>
+
+</body>
+</html>
