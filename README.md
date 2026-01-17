@@ -2,8 +2,6 @@ Genshin Pilot Dashboard ✈️
 
 A specialized, mobile-friendly web dashboard designed for Genshin Impact "Pilots" (account maintainers). This tool helps pilots complete daily commissions and resin management within a strict 30-minute shift while adhering to strict account safety protocols.
 
-🔗 Live Demo: Click here to open the Dashboard
-
 🎯 Purpose
 
 Managing another player's account requires speed, efficiency, and safety. This dashboard serves as a second-screen companion app to:
