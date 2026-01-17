@@ -56,20 +56,6 @@ Follow the checklist phases in order.
 
 Stop immediately when the timer hits 00:00 or the "Panic Mode" activates.
 
-🛠️ Installation / Hosting
-
-This is a single-file HTML application. You can host it for free using GitHub Pages:
-
-Fork or Star this repository.
-
-Go to Settings > Pages.
-
-Under Source, select Deploy from a branch.
-
-Select main (or master) and /root.
-
-Click Save. Your link will be ready in 1-2 minutes!
-
 📱 Tech Stack
 
 HTML5
